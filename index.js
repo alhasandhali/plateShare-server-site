@@ -79,11 +79,11 @@ async function run() {
         let query = {};
 
         if (id) {
-          query.user_id = id; // filter by user_id
+          query.user_id = id;
         }
 
         if (donator_email) {
-          query.donator_email = donator_email; // filter by donator_email
+          query.donator_email = donator_email;
         }
 
         const result = await foodsCollection.find(query).toArray();
@@ -92,26 +92,6 @@ async function run() {
         res.status(500).send({ error: err.message });
       }
     });
-
-    // app.patch("/users-img-change", async (req, res) => {
-    //   try {
-    //     const result = await userCollection.updateMany(
-    //       {}, // empty filter → updates all documents
-    //       {
-    //         $set: {
-    //           image: "https://i.ibb.co.com/pvWPkg07/man-illustration.webp",
-    //         },
-    //       }
-    //     );
-
-    //     res.send({
-    //       message: `${result.modifiedCount} food items updated successfully`,
-    //     });
-    //   } catch (err) {
-    //     console.error(err);
-    //     res.status(500).send({ error: "Failed to update food images" });
-    //   }
-    // });
 
     // Get featured 6 foods by quantity
     app.get("/featured-foods", async (req, res) => {
@@ -162,6 +142,35 @@ async function run() {
       }
     });
 
+    // Update Food Status
+    app.patch("/food/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { food_status } = req.body;
+
+        if (!food_status) {
+          return res.status(400).send({ message: "food_status is required" });
+        }
+
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: { food_status },
+        };
+
+        const result = await foodCollection.updateOne(filter, updateDoc);
+
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .send({ message: "Food not found or not updated" });
+        }
+
+        res.send({ message: "Food status updated", result });
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+
     // Delete food
     app.delete("/food/:id", async (req, res) => {
       const id = req.params.id;
@@ -192,6 +201,38 @@ async function run() {
         res.send(result);
       } catch (err) {
         res.status(500).send({ error: err.message });
+      }
+    });
+
+    //Update Requested Food Status
+    app.patch("/requested-food/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!status) {
+          return res.status(400).send({ message: "Status is required" });
+        }
+
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: { status },
+        };
+
+        const result = await requestedFoodCollection.updateOne(
+          filter,
+          updateDoc
+        );
+
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .send({ message: "Request not found or not updated" });
+        }
+
+        res.send({ message: "Request status updated", result });
+      } catch (error) {
+        res.status(500).send({ error: error.message });
       }
     });
 
