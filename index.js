@@ -74,15 +74,23 @@ async function run() {
 
     // Get all foods
     app.get("/foods", async (req, res) => {
-      const id = req.query.id;
-      let query = {};
+      try {
+        const { id, donator_email } = req.query;
+        let query = {};
 
-      if (id) {
-        query = { user_id: id };
+        if (id) {
+          query.user_id = id; // filter by user_id
+        }
+
+        if (donator_email) {
+          query.donator_email = donator_email; // filter by donator_email
+        }
+
+        const result = await foodsCollection.find(query).toArray();
+        res.send(result);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
       }
-
-      const result = await foodsCollection.find(query).toArray();
-      res.send(result);
     });
 
     // app.patch("/users-img-change", async (req, res) => {
