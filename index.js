@@ -146,17 +146,20 @@ async function run() {
 
     // Update food
     app.patch("/food/:id", async (req, res) => {
-      const id = req.params.id;
-      const updateFood = req.body;
-      const query = { _id: new ObjectId(id) };
-      const update = {
-        $set: {
-          name: updateFood.name,
-          price: updateFood.price,
-        },
-      };
-      const result = await foodsCollection.updateOne(query, update);
-      res.send(result);
+      try {
+        const id = req.params.id;
+        const updateFood = req.body;
+
+        const query = { _id: new ObjectId(id) };
+        const update = { $set: updateFood };
+
+        const result = await foodsCollection.updateOne(query, update);
+
+        res.send(result);
+      } catch (err) {
+        console.error("Error updating food:", err);
+        res.status(500).send({ error: err.message });
+      }
     });
 
     // Delete food
