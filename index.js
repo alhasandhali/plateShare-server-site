@@ -39,12 +39,26 @@ async function run() {
       res.send(result);
     });
 
-    // Get single food
+    // Get single user
     app.get("/user/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
       res.send(result);
+    });
+
+    // Get user by email
+    app.get("/user/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const user = await userCollection.findOne({ email });
+        if (!user) {
+          return res.status(404).send({ message: "User not found" });
+        }
+        res.send(user);
+      } catch (err) {
+        res.status(500).send({ error: err.message });
+      }
     });
 
     // Post user
