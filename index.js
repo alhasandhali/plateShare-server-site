@@ -41,7 +41,7 @@ const verifyFirebaseToken = async (req, res, next) => {
   }
 };
 
-const uri = process.env.MONGO_URI;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster-1.dymuola.mongodb.net/?appName=Cluster-1`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -54,7 +54,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     console.log("Connected to MongoDB");
 
     const db = client.db("plateShare_db");
@@ -253,18 +253,16 @@ async function run() {
         res.status(500).send({ error: error.message });
       }
     });
-
-    // Get method
-    app.get("/", (req, res) => res.send("Server is running"));
   } catch (err) {
     console.error("MongoDB connection failed:", err);
   }
 }
 
+// Get method
+app.get("/", (req, res) => res.send("Server is running"));
+
 run().catch(console.dir);
 
-// app.listen(port, () => {
-//   console.log(`Server is running on port: ${port}`);
-// });
-
-module.exports = app;
+app.listen(port, () => {
+  console.log(`Server is running on port: ${port}`);
+});
