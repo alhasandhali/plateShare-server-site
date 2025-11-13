@@ -209,10 +209,6 @@ async function run() {
       try {
         const newRequestedFood = req.body;
 
-        if (newRequestedFood.user_email !== req.token_email) {
-          return res.status(403).send({ message: "forbiddenaccess" });
-        }
-
         const result = await requestedFoodCollection.insertOne(
           newRequestedFood
         );
