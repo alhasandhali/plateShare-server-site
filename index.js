@@ -92,7 +92,7 @@ async function run() {
     });
 
     // Post user
-    app.post("/user", verifyFirebaseToken, async (req, res) => {
+    app.post("/user", async (req, res) => {
       try {
         const newUser = req.body;
         const result = await userCollection.insertOne(newUser);
