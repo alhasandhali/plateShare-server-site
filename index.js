@@ -66,7 +66,7 @@ async function run() {
     });
 
     // Get single user
-    app.get("/user/:id", verifyFirebaseToken, async (req, res) => {
+    app.get("/user/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
@@ -74,7 +74,7 @@ async function run() {
     });
 
     // Get user by email
-    app.get("/user/email/:email", verifyFirebaseToken, async (req, res) => {
+    app.get("/user/email/:email", async (req, res) => {
       try {
         const email = req.params.email;
         const user = await userCollection.findOne({ email });
@@ -121,7 +121,6 @@ async function run() {
 
     // Get featured 6 foods by quantity
     app.get("/featured-foods", async (req, res) => {
-      console.log("I'm from features-foods");
       const cursor = foodsCollection
         .find({ food_status: "Available" })
         .sort({ food_quantity: -1 })
