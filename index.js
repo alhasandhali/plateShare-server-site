@@ -59,14 +59,14 @@ async function run() {
     const requestedFoodCollection = db.collection("food_requests");
 
     // Get all users
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyFirebaseToken, async (req, res) => {
       const cursor = userCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
 
     // Get single user
-    app.get("/user/:id", async (req, res) => {
+    app.get("/user/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await userCollection.findOne(query);
@@ -74,7 +74,7 @@ async function run() {
     });
 
     // Get user by email
-    app.get("/user/email/:email", async (req, res) => {
+    app.get("/user/email/:email", verifyFirebaseToken, async (req, res) => {
       try {
         const email = req.params.email;
         const user = await userCollection.findOne({ email });
@@ -88,7 +88,7 @@ async function run() {
     });
 
     // Post user
-    app.post("/user", async (req, res) => {
+    app.post("/user", verifyFirebaseToken, async (req, res) => {
       try {
         const newUser = req.body;
         const result = await userCollection.insertOne(newUser);
@@ -132,7 +132,7 @@ async function run() {
     });
 
     // Get single food
-    app.get("/food/:id", async (req, res) => {
+    app.get("/food/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await foodsCollection.findOne(query);
@@ -140,7 +140,7 @@ async function run() {
     });
 
     // Post food
-    app.post("/food", async (req, res) => {
+    app.post("/food", verifyFirebaseToken, async (req, res) => {
       try {
         const newfood = req.body;
         const result = await foodsCollection.insertOne(newfood);
@@ -151,7 +151,7 @@ async function run() {
     });
 
     // Update Food
-    app.patch("/food/:id", async (req, res) => {
+    app.patch("/food/:id", verifyFirebaseToken, async (req, res) => {
       try {
         const { id } = req.params;
         const updateData = req.body;
@@ -173,7 +173,7 @@ async function run() {
     });
 
     // Delete food
-    app.delete("/food/:id", async (req, res) => {
+    app.delete("/food/:id", verifyFirebaseToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await foodsCollection.deleteOne(query);
@@ -181,11 +181,14 @@ async function run() {
     });
 
     // Get all requested food
-    app.get("/requested-foods", async (req, res) => {
+    app.get("/requested-foods", verifyFirebaseToken, async (req, res) => {
       const { email, food_id } = req.query;
       const query = {};
 
       if (email) {
+        if (email != req.token_email) {
+          return res.status(403).send({ message: "forbiddenaccess" });
+        }
         query.user_email = email;
       }
       if (food_id) query.food_id = food_id;
@@ -195,9 +198,13 @@ async function run() {
     });
 
     // Post Requested Food
-    app.post("/requested-food", async (req, res) => {
+    app.post("/requested-food", verifyFirebaseToken, async (req, res) => {
       try {
         const newRequestedFood = req.body;
+
+        if (newRequestedFood.user_email !== req.token_email) {
+          return res.status(403).send({ message: "forbiddenaccess" });
+        }
 
         const result = await requestedFoodCollection.insertOne(
           newRequestedFood
@@ -209,7 +216,7 @@ async function run() {
     });
 
     //Update Requested Food Status
-    app.patch("/requested-food/:id", async (req, res) => {
+    app.patch("/requested-food/:id", verifyFirebaseToken, async (req, res) => {
       try {
         const { id } = req.params;
         const { status } = req.body;
