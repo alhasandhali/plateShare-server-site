@@ -101,7 +101,7 @@ async function run() {
     // Get all foods
     app.get("/foods", async (req, res) => {
       try {
-        const { id, donator_email } = req.query;
+        const { id, donator_email, status } = req.query;
         let query = {};
 
         if (id) {
@@ -110,6 +110,10 @@ async function run() {
 
         if (donator_email) {
           query.donator_email = donator_email;
+        }
+
+        if (status) {
+          query.food_status = status;
         }
 
         const result = await foodsCollection.find(query).toArray();
