@@ -5,11 +5,37 @@ const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
+var admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
+
+var serviceAccount = require("./plateshare-firebase-admin-key.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 // middleware
 app.use(cors());
 app.use(express.json());
+
+const verifyFirebaseToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).send({ message: "Unauthorized: No token provided" });
+  }
+
+  const idToken = authHeader.split(" ")[1];
+
+  try {
+    const userInfo = await admin.auth().verifyIdToken(idToken);
+    req.token_email = userInfo.email;
+    next();
+  } catch (error) {
+    console.error("Firebase token verification error:", error);
+    return res.status(401).send({ message: "Unauthorized: Invalid token" });
+  }
+};
 
 const uri = process.env.MONGO_URI;
 
@@ -124,50 +150,25 @@ async function run() {
       }
     });
 
-    // Update food
+    // Update Food
     app.patch("/food/:id", async (req, res) => {
       try {
-        const id = req.params.id;
-        const updateFood = req.body;
+        const { id } = req.params;
+        const updateData = req.body;
 
-        const query = { _id: new ObjectId(id) };
-        const update = { $set: updateFood };
+        const filter = { _id: new ObjectId(id) };
 
-        const result = await foodsCollection.updateOne(query, update);
+        const updateDoc =
+          Object.keys(updateData).length === 1 && updateData.food_status
+            ? { $set: { food_status: updateData.food_status } }
+            : { $set: updateData };
+
+        const result = await foodsCollection.updateOne(filter, updateDoc);
 
         res.send(result);
       } catch (err) {
         console.error("Error updating food:", err);
         res.status(500).send({ error: err.message });
-      }
-    });
-
-    // Update Food Status
-    app.patch("/food/:id", async (req, res) => {
-      try {
-        const { id } = req.params;
-        const { food_status } = req.body;
-
-        if (!food_status) {
-          return res.status(400).send({ message: "food_status is required" });
-        }
-
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: { food_status },
-        };
-
-        const result = await foodCollection.updateOne(filter, updateDoc);
-
-        if (result.modifiedCount === 0) {
-          return res
-            .status(404)
-            .send({ message: "Food not found or not updated" });
-        }
-
-        res.send({ message: "Food status updated", result });
-      } catch (error) {
-        res.status(500).send({ error: error.message });
       }
     });
 
@@ -184,7 +185,9 @@ async function run() {
       const { email, food_id } = req.query;
       const query = {};
 
-      if (email) query.user_email = email;
+      if (email) {
+        query.user_email = email;
+      }
       if (food_id) query.food_id = food_id;
 
       const result = await requestedFoodCollection.find(query).toArray();
@@ -195,6 +198,7 @@ async function run() {
     app.post("/requested-food", async (req, res) => {
       try {
         const newRequestedFood = req.body;
+
         const result = await requestedFoodCollection.insertOne(
           newRequestedFood
         );

@@ -1,2 +1,3 @@
 node _modules
 .env
+plateshare-firebase-admin-key.json
